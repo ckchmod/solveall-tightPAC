@@ -1,9 +1,9 @@
 # Tight PAC-Bayes Bounds for Deep Neural Networks
 
 **Chris Kang, University of Calgary**
-March 16, 2026
+March 18, 2026
 
-**AI Assistance Disclosure.** The substantial majority of this work --- including proof construction, verification, error correction, and empirical experiments --- was produced by AI systems (Claude Opus 4.6, Anthropic; GPT-5.3-Codex, OpenAI; Gemini 3.1 Pro Preview, Google) under human direction, using multi-LLM adversarial verification. Full methodology documented in the [companion paper](https://github.com/ckchmod/solveall-tightPAC).
+**AI Assistance Disclosure.** The substantial majority of this work --- including proof construction, verification, error correction, and empirical experiments --- was produced by AI systems (Claude Opus 4.6, Anthropic; GPT-5.3-Codex and GPT-5.4 Pro, OpenAI; Gemini 3.1 Pro Preview and Gemini 3.1 Pro High, Google) under human direction, using multi-LLM adversarial verification across 11 review phases. Full methodology documented in the [companion paper](https://github.com/ckchmod/solveall-tightPAC).
 
 ---
 
@@ -28,6 +28,8 @@ Prior work achieved these criteria in isolation or pairwise, but no unified fram
 1. The **PAC-Bayes-kl inequality** with Maurer's constant $C(n,\delta) = \ln(2\sqrt{n}/\delta)$,
 2. **kl-inverse certificate computation** via certified bisection with explicit numerical error tracking,
 3. **Universality** over all admissible prior-posterior pairs $(P,Q)$ with $\mathrm{KL}(Q\|P) < \infty$.
+
+Validity is universal over all such pairs; polynomial-time computability (Theorem 6) additionally requires that a certified upper bound $\mathrm{KL}_{ub}(Q) \ge \mathrm{KL}(Q\|P)$ be polynomial-time computable from the representation of $(P,Q)$.
 
 ---
 
@@ -101,9 +103,9 @@ This is a known result; we cite Maurer (2004) and do not reproduce the proof.
 
 **Theorem 5** (Certified kl-inverse bound). *Given inputs $\hat{L}_{S_1}^{(m)}(Q)$ (Monte Carlo estimate with tolerance $\varepsilon_{mc}$), $\mathrm{KL}_{ub}(Q) \ge \mathrm{KL}(Q\|P)$, and confidence $\delta = \delta_{pb} + \delta_{mc} + \delta_{num}$, define:*
 
-$$B_{\mathrm{cert}}(Q) := \mathrm{kl}^{-1}_+\!\left(\hat{L}_{S_1}^{(m)}(Q) + \varepsilon_{mc},\; \frac{\mathrm{KL}_{ub}(Q) + C(n_1, \delta_{pb})}{n_1}\right) + \eta_{num},$$
+$$B_{\mathrm{cert}}(Q) := \mathrm{kl}^{-1}_+\!\left(\min\!\left\{1,\, \hat{L}_{S_1}^{(m)}(Q) + \varepsilon_{mc}\right\},\; \frac{\mathrm{KL}_{ub}(Q) + C(n_1, \delta_{pb})}{n_1}\right) + \eta_{num},$$
 
-*where $C(n_1, \delta_{pb}) = \ln(2\sqrt{n_1}/\delta_{pb})$ and $\eta_{num}$ is the bisection bracket tolerance. Then with probability $\ge 1 - \delta$:*
+*where $C(n_1, \delta_{pb}) = \ln(2\sqrt{n_1}/\delta_{pb})$, $\eta_{num}$ is the bisection bracket tolerance, and the $\min\{1,\cdot\}$ ensures the first argument of $\mathrm{kl}^{-1}_+$ lies in $[0,1]$. Then with probability $\ge 1 - \delta$:*
 
 $$L_\mathcal{D}(Q) \le B_{\mathrm{cert}}(Q).$$
 
@@ -121,13 +123,15 @@ $$L_\mathcal{D}(Q) \le \mathrm{kl}^{-1}_+\!\left(\hat{L}_{S_1}(Q),\; \frac{\math
 
 $$\mathrm{kl}^{-1}_+\!\left(\hat{L}_{S_1}(Q),\; \varepsilon_{pb}(Q)\right) \le \mathrm{kl}^{-1}_+\!\left(\hat{L}_{S_1}(Q),\; \varepsilon_{pb}^{\mathrm{cert}}(Q)\right).$$
 
-*Step 3 (MC monotonicity).* On $E_{mc}$, $\hat{L}_{S_1}(Q) \le \hat{L}_{S_1}^{(m)}(Q) + \varepsilon_{mc} = p_{\mathrm{cert}}$. By Theorem 3 (monotonicity in $p$):
+*Step 3 (MC monotonicity).* On $E_{mc}$, $\hat{L}_{S_1}(Q) \le \hat{L}_{S_1}^{(m)}(Q) + \varepsilon_{mc}$. Since $\hat{L}_{S_1}(Q) \in [0,1]$, we have $\hat{L}_{S_1}(Q) \le \min\{1, \hat{L}_{S_1}^{(m)}(Q) + \varepsilon_{mc}\} = p_{\mathrm{cert}}$. By Theorem 3 (monotonicity in $p$):
 
 $$\mathrm{kl}^{-1}_+\!\left(\hat{L}_{S_1}(Q),\; \varepsilon_{pb}^{\mathrm{cert}}(Q)\right) \le \mathrm{kl}^{-1}_+\!\left(p_{\mathrm{cert}},\; \varepsilon_{pb}^{\mathrm{cert}}(Q)\right).$$
 
 *Step 4 (Numerical bracket).* On $E_{num}$:
 
-$$\mathrm{kl}^{-1}_+\!\left(p_{\mathrm{cert}},\; \varepsilon_{pb}^{\mathrm{cert}}(Q)\right) \le B_{\mathrm{cert}}^{num}(Q) = B_{\mathrm{cert}}(Q).$$
+$$\mathrm{kl}^{-1}_+\!\left(p_{\mathrm{cert}},\; \varepsilon_{pb}^{\mathrm{cert}}(Q)\right) \le B_{\mathrm{cert}}^{num}(Q) \le B_{\mathrm{cert}}(Q),$$
+
+where the second inequality holds because bisection returns an upper bracket endpoint satisfying $B_{\mathrm{cert}}^{num}(Q) \le \mathrm{kl}^{-1}_+(p_{\mathrm{cert}}, \varepsilon_{pb}^{\mathrm{cert}}(Q)) + \eta_{num} = B_{\mathrm{cert}}(Q)$.
 
 Combining Steps 1--4:
 
@@ -165,7 +169,7 @@ Combining: $O(m \cdot T_{\mathrm{fwd}} + p + \log_2(1/\eta_{num}))$, polynomial 
 
 *Extension to finite grids.* For $|\Lambda| = M$ candidates, apply the above to each $\lambda \in \Lambda$ with per-candidate confidence $\delta_{mc}/M$ and $\delta_{num}/M$ (union bound; the PAC-Bayes event $E_{pb}$ is shared across all $\lambda$). Total runtime: $O(M \cdot m \cdot T_{\mathrm{fwd}} + M \cdot \log_2(1/\eta_{num}))$.
 
-*Extension to compact continuous $\Lambda$.* For $\Lambda \subset \mathbb{R}^d$ compact, under standard Lipschitz conditions (i.e., $\lambda \mapsto \mathrm{KL}(Q_\lambda\|P)$ is $L_K$-Lipschitz and $\lambda \mapsto \hat{L}_{S_1}(Q_\lambda)$ is $L_L$-Lipschitz), the certificate map $\lambda \mapsto B_{\mathrm{cert}}(\lambda)$ is $L_B$-Lipschitz with $L_B = L_p \cdot L_L + L_\varepsilon \cdot L_K/n_1$. An $\varepsilon_{\mathrm{net}}$-net of $\Lambda$ with $M \le (2R L_B / \varepsilon_{\mathrm{approx}})^d$ points covers all of $\Lambda$ to accuracy $\varepsilon_{\mathrm{approx}}$. The total runtime is polynomial in $(n_1, p, \log(1/\delta), 1/\varepsilon_{mc}, \log(1/\eta_{num}))$ for fixed $d$, with the covering number contributing $(R L_B / \varepsilon_{\mathrm{approx}})^d$ --- exponential in $d$ but polynomial in all other parameters. $\blacksquare$
+*Extension to compact continuous $\Lambda$ (under additional regularity).* For $\Lambda \subset \mathbb{R}^d$ compact, under standard Lipschitz conditions (i.e., $\lambda \mapsto \mathrm{KL}(Q_\lambda\|P)$ is $L_K$-Lipschitz and $\lambda \mapsto \hat{L}_{S_1}(Q_\lambda)$ is $L_L$-Lipschitz) and assuming $p_{\mathrm{cert}}(\lambda) \ge p_{\min} > 0$ for all $\lambda \in \Lambda$ (ensuring bounded partial derivatives of $\mathrm{kl}^{-1}_+$), the certificate map $\lambda \mapsto B_{\mathrm{cert}}(\lambda)$ is $L_B$-Lipschitz with $L_B = L_p \cdot L_L + L_\varepsilon \cdot L_K/n_1$, where $L_p$ depends on $p_{\min}$ (at most logarithmically). An $\varepsilon_{\mathrm{net}}$-net of $\Lambda$ with $M \le (2R L_B / \varepsilon_{\mathrm{approx}})^d$ points covers all of $\Lambda$ to accuracy $\varepsilon_{\mathrm{approx}}$. The total runtime is polynomial in $(n_1, p, \log(1/\delta), 1/\varepsilon_{mc}, \log(1/\eta_{num}))$ for fixed $d$, with the covering number contributing $(R L_B / \varepsilon_{\mathrm{approx}})^d$ --- exponential in $d$ but polynomial in all other parameters. $\blacksquare$
 
 ---
 
@@ -229,7 +233,7 @@ Applying Step 1 with Maurer's constant: $B_{\mathrm{kl}}^{\mathrm{Ma}} = \mathrm
 
 $$B_{\mathrm{kl}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Mc}}.$$
 
-*Step 3 (Non-vacuity).* Zhou et al. (2019) demonstrated $B_{\sqrt{}}^{\mathrm{Mc}} < 1$ at ImageNet scale using a compression-based prior with $\mathrm{KL}(Q\|P) \approx 2.47 \times 10^4$ nats and $n_1 \approx 600{,}000$. Since $B_{\mathrm{kl}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Mc}} < 1$, the kl-inversion certificate is also non-vacuous for the same $(P,Q,S,\delta)$. $\blacksquare$
+*Step 3 (Non-vacuity).* Zhou et al. (2019) demonstrated $B_{\sqrt{}}^{\mathrm{Mc}} < 1$ at ImageNet scale using a compression-based prior with $\mathrm{KL}(Q\|P) \approx 2.47 \times 10^4$ nats and $n_1 \approx 600{,}000$. Their prior $P$ is data-independent (quantization-based compression), hence independent of $S_1$ for any sample split, satisfying the hypothesis of Theorem 4. Since $B_{\mathrm{kl}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Mc}} < 1$, the kl-inversion certificate is also non-vacuous for the same $(P,Q,S,\delta)$. $\blacksquare$
 
 ---
 
@@ -239,7 +243,7 @@ $$B_{\mathrm{kl}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\
 
 $$\mathcal{E} := \bigl\{\forall \lambda \in \Lambda:\; L_\mathcal{D}(Q_\lambda) \le B_{\mathrm{cert}}(Q_\lambda)\bigr\},$$
 
-*which satisfies $\Pr_{S_1}[\mathcal{E}] \ge 1 - M\delta$ by Theorem 5 and the union bound. Suppose the true risks $\{L_\mathcal{D}(Q_\lambda)\}_{\lambda \in \Lambda}$ are distinct and sorted with minimum gap $\delta_L$. Define the maximum certification gap*
+*which satisfies $\Pr[\mathcal{E} \mid S_0] \ge 1 - M\delta$ by Theorem 5 and the union bound (probability over $S_1$ and any internal Monte Carlo randomness, conditional on $S_0$; when $\varepsilon_{mc} = 0$, this reduces to probability over $S_1$ alone). Suppose the true risks $\{L_\mathcal{D}(Q_\lambda)\}_{\lambda \in \Lambda}$ are distinct and sorted with minimum gap $\delta_L$. Define the maximum certification gap*
 
 $$\mathrm{gap}_{\max} := \max_{\lambda \in \Lambda}\bigl[B_{\mathrm{cert}}(Q_\lambda) - L_\mathcal{D}(Q_\lambda)\bigr],$$
 
@@ -285,13 +289,13 @@ $$\tau \ge \frac{\bigl[M(M-1)/2 - \tilde{k}(2M-\tilde{k}-1)/2\bigr] - \tilde{k}(
 
 ## 9. Direct Monotonicity
 
-**Theorem 9** (Direct monotonicity). *On the event $\mathcal{E}$ from Theorem 8 ($\Pr_{S_1}[\mathcal{E}] \ge 1 - M\delta$), for any $\lambda, \lambda'$ sharing the same $\varepsilon_{mc}$: if $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$ and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$, then $B_{\mathrm{cert}}(\lambda) < B_{\mathrm{cert}}(\lambda')$.*
+**Theorem 9** (Direct monotonicity). *On the event $\mathcal{E}$ from Theorem 8 ($\Pr[\mathcal{E} \mid S_0] \ge 1 - M\delta$), for any $\lambda, \lambda'$ sharing the same $\varepsilon_{mc}$: if $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$, $\hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} < 1$, and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$, then $B_{\mathrm{cert}}(\lambda) < B_{\mathrm{cert}}(\lambda')$.*
 
-**Proof.** Let $\lambda, \lambda' \in \Lambda$ share the same $\varepsilon_{mc}$. Suppose $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$ and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$.
+**Proof.** Let $\lambda, \lambda' \in \Lambda$ share the same $\varepsilon_{mc}$. Suppose $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$, $\hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} < 1$, and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$.
 
-*Step 1 (First-argument ordering).* Since $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$ and both share the same $\varepsilon_{mc}$:
+*Step 1 (First-argument ordering).* Since $\hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} < 1$ by hypothesis, the $\min\{1,\cdot\}$ clamp in $p_{\mathrm{cert}}$ is inactive for both configurations. Hence:
 
-$$p_{\mathrm{cert}}(\lambda) = \hat{L}^{(m)}(Q_\lambda) + \varepsilon_{mc} < \hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} = p_{\mathrm{cert}}(\lambda').$$
+$$p_{\mathrm{cert}}(\lambda) = \hat{L}^{(m)}(Q_\lambda) + \varepsilon_{mc} < \hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} = p_{\mathrm{cert}}(\lambda') < 1.$$
 
 *Step 2 (Second-argument ordering).* Since $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$:
 
@@ -318,7 +322,7 @@ Combining: $B_{\mathrm{cert}}(\lambda) < B_{\mathrm{cert}}(\lambda')$. $\blacksq
 - *(A3) **Monte Carlo access.** For each $\lambda$, $m$ i.i.d. weight samples from $Q_\lambda$ are available, with Hoeffding tolerance $\varepsilon_{mc} = \sqrt{\ln(2/\delta_{mc})/(2m)}$.*
 - *(A4) **Distinct risks.** The true risks $\{L_\mathcal{D}(Q_\lambda)\}_{\lambda \in \Lambda}$ are distinct with minimum gap $\delta_L > 0$.*
 
-*Set $\delta = \delta_{pb} + \delta_{mc} + \delta_{num}$. Then with probability $\ge 1 - M\delta$ over $S_1$, the certified PAC-Bayes framework satisfies all three criteria simultaneously:*
+*Set $\delta = \delta_{pb} + \delta_{mc} + \delta_{num}$. Then with probability $\ge 1 - M\delta$ over $S_1$ and any auxiliary randomness (conditional on $S_0$), the certified PAC-Bayes framework satisfies all three criteria simultaneously:*
 
 **(I) Non-vacuity.** *For every $\lambda \in \Lambda$:*
 
@@ -336,11 +340,11 @@ $$O\!\left(M \cdot m \cdot T_{\mathrm{fwd}} + M \cdot \log_2(1/\eta_{num})\right
 
 $$\tau \ge 1 - \frac{2\tilde{k}(2M - \tilde{k} - 1)}{M(M-1)}.$$
 
-*Full rank consistency ($\tau = 1$) holds when $\mathrm{gap}_{\max} < \delta_L$. Additionally, for any $\lambda, \lambda'$ sharing the same $\varepsilon_{mc}$: if $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$ and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$, then $B_{\mathrm{cert}}(\lambda) < B_{\mathrm{cert}}(\lambda')$ (direct monotonicity).*
+*Full rank consistency ($\tau = 1$) holds when $\mathrm{gap}_{\max} < \delta_L$. Additionally, for any $\lambda, \lambda'$ sharing the same $\varepsilon_{mc}$: if $\hat{L}^{(m)}(Q_\lambda) < \hat{L}^{(m)}(Q_{\lambda'})$, $\hat{L}^{(m)}(Q_{\lambda'}) + \varepsilon_{mc} < 1$, and $\mathrm{KL}_{ub}(\lambda) \le \mathrm{KL}_{ub}(\lambda')$, then $B_{\mathrm{cert}}(\lambda) < B_{\mathrm{cert}}(\lambda')$ (direct monotonicity).*
 
 **Proof.** The proof assembles Theorems 5--9 with no new derivations.
 
-*Probability event.* Theorem 5 gives $\Pr_{S_1}[L_\mathcal{D}(Q_\lambda) \le B_{\mathrm{cert}}(Q_\lambda)] \ge 1 - \delta$ for each fixed $\lambda$. By the union bound over $|\Lambda| = M$ configurations, $\Pr_{S_1}[\mathcal{E}] \ge 1 - M\delta$ where $\mathcal{E} := \{\forall \lambda \in \Lambda:\; L_\mathcal{D}(Q_\lambda) \le B_{\mathrm{cert}}(Q_\lambda)\}$ is the event from Theorem 8. All statements below condition on $\mathcal{E}$.
+*Probability event.* Theorem 5 gives $\Pr[L_\mathcal{D}(Q_\lambda) \le B_{\mathrm{cert}}(Q_\lambda) \mid S_0] \ge 1 - \delta$ for each fixed $\lambda$. By the union bound over $|\Lambda| = M$ configurations, $\Pr[\mathcal{E} \mid S_0] \ge 1 - M\delta$ where $\mathcal{E} := \{\forall \lambda \in \Lambda:\; L_\mathcal{D}(Q_\lambda) \le B_{\mathrm{cert}}(Q_\lambda)\}$ is the event from Theorem 8. All statements below condition on $\mathcal{E}$.
 
 *Criterion (I).* On $\mathcal{E}$, each $B_{\mathrm{cert}}(Q_\lambda)$ is a valid upper bound on $L_\mathcal{D}(Q_\lambda)$. The Pinsker relaxation upper bound follows from Theorem 7, and the strict dominance chain $B_{\mathrm{kl}}^{\mathrm{Ma}} \le B_{\sqrt{}}^{\mathrm{Ma}} < B_{\sqrt{}}^{\mathrm{Mc}}$ follows from the comparison inequality and Lemma 1.
 
@@ -354,7 +358,7 @@ $$\tau \ge 1 - \frac{2\tilde{k}(2M - \tilde{k} - 1)}{M(M-1)}.$$
 
 ## 11. Empirical Verification (Summary)
 
-All three criteria are confirmed empirically on real neural networks at two scales.
+All three criteria are confirmed empirically on real neural networks at two scales. In experiments, $\varepsilon_{mc}$ and $\eta_{num}$ are set to 0, treating Monte Carlo and numerical error as negligible; the reported bounds are therefore plug-in approximations to the formal certificates of Theorem 5. True risk is estimated from a held-out test set.
 
 **MNIST** (784-600-600-10, $d = 837{,}610$ parameters): 10/10 non-vacuous kl-inverse certificates. Best certificate $B = 0.323$ (true risk $L_\mathcal{D} = 0.066$). Within-group Kendall $\tau = +1.0$ at $\sigma = 0.05$.
 
