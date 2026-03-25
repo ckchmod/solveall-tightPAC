@@ -3,7 +3,7 @@
 **Chris Kang, University of Calgary**
 March 18, 2026
 
-**AI Assistance Disclosure.** The substantial majority of this work --- including proof construction, verification, error correction, and empirical experiments --- was produced by AI systems (Claude Opus 4.6, Anthropic; GPT-5.3-Codex and GPT-5.4 Pro, OpenAI; Gemini 3.1 Pro Preview and Gemini 3.1 Pro High, Google) under human direction, using multi-LLM adversarial verification across 18 review phases. Full methodology documented in the [companion paper](https://github.com/ckchmod/solveall-tightPAC).
+**AI Assistance Disclosure.** The substantial majority of this work --- including proof construction, verification, error correction, and empirical experiments --- was produced by AI systems (Claude Opus 4.6, Anthropic; GPT-5.3-Codex and GPT-5.4 Pro, OpenAI; Gemini 3.1 Pro Preview and Gemini 3.1 Pro High, Google) under human direction, using multi-LLM adversarial verification across 20+ review phases. Full methodology documented in the [companion paper](https://github.com/ckchmod/solveall-tightPAC).
 
 ---
 
